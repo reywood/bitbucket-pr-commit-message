@@ -1,0 +1,21 @@
+{
+    "manifest_version": 2,
+
+    "name": "BitBucket Better PR Commit Message",
+    "description": "This extension will replace BitBucket's default pull request commit message with a more useful message, especially if you squash your PRs.",
+    "version": "1.0.0",
+    "homepage_url": "https://github.com/reywood/bitbucket-pr-commit-message",
+    "author": "Sean Dwyer",
+
+    "content_scripts": [
+        {
+            "matches": ["https://bitbucket.org/*/pull-requests/*"],
+            "js": [
+                "src/index.js"
+            ]
+        }
+    ],
+    "permissions": [
+        "activeTab"
+    ]
+}

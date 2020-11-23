@@ -1,0 +1,21 @@
+{
+    "root": true,
+    "parserOptions": {
+        "ecmaVersion": 2017,
+        "sourceType": "script"
+    },
+    "env": {
+        "browser": true
+    },
+    "globals": {
+        "Promise": true
+    },
+    "rules": {
+        "complexity": ["error", 5],
+        "indent": ["error", 4, {"SwitchCase": 1}],
+        "no-console": 0,
+        "semi": 2,
+        "no-unused-vars": 2,
+        "no-undef": 2
+    }
+}
