@@ -7,3 +7,5 @@ If your development workflow involves creating a pull request for every change, 
 # Install
 
 [Firefox extension](https://addons.mozilla.org/en-US/firefox/addon/bitbucket-better-pr-commit-msg/)
+
+[Chrome extension](https://chrome.google.com/webstore/detail/bitbucket-better-pr-commi/pefbikdjkkbbkmlnmfoogcpomlcngaho)
