@@ -2,12 +2,21 @@ const MERGE_STRATEGY_SQUASH = "Squash";
 const MERGE_STRATEGY_MERGE_COMMIT = "Merge commit";
 const MERGE_STRATEGY_FAST_FORWARD = "Fast forward";
 
-const state = {};
-state.reset = () => {
-    state.mergeDialogOpen = false;
-    state.commitMessageChangedByUser = false;
+const state = {
+    reset() {
+        this.mergeDialogOpen = false;
+        this.commitMessageChangedByUser = false;
+        this.disableCommitMessageChangeTracking = false;
+    }
 };
 state.reset();
+
+const isLoggingEnabled = false;
+function log(message) {
+    if (isLoggingEnabled) {
+        console.log(message);
+    }
+}
 
 init();
 
@@ -25,8 +34,8 @@ async function init() {
 async function attachMergeDialogOpenEventHandler() {
     const onMergeDialogOpen = () => {
         state.reset();
-        state.mergeDialogOpen = true;
         updateMergeCommitMessage(getMergeStrategy());
+        state.mergeDialogOpen = true;
     };
 
     const mergeButton = await findMergeButton({ maxSecondsToWait: 10 });
@@ -50,6 +59,7 @@ function attachMergeDialogCloseEventHandler() {
 
 function attachMergeStrategyChangeEventHandler() {
     onMergeStrategyChange((newMergeStrategy) => {
+        log(`Merge strategy changed to ${newMergeStrategy}`);
         updateMergeCommitMessage(newMergeStrategy);
     });
 }
@@ -57,16 +67,21 @@ function attachMergeStrategyChangeEventHandler() {
 function attachCommitMessageChangedByUserEventHandler() {
     let isEventHandlerAttached = false;
 
-    const handler = () => {
-        state.commitMessageChangedByUser = true;
+    const textAreaInputHandler = () => {
+        if (!state.disableCommitMessageChangeTracking) {
+            log("Commit message input fired");
+            state.commitMessageChangedByUser = true;
+        }
     };
 
     setInterval(() => {
         if (state.mergeDialogOpen) {
             if (!isEventHandlerAttached) {
-                const commitMessageTextArea = document.getElementById("merge-dialog-commit-message-textfield");
-                commitMessageTextArea.addEventListener("keypress", handler);
-                isEventHandlerAttached = true;
+                const commitMessageTextArea = getMergeCommitMessageTextArea();
+                if (commitMessageTextArea) {
+                    commitMessageTextArea.addEventListener("input", textAreaInputHandler);
+                    isEventHandlerAttached = true;
+                }
             }
         } else {
             isEventHandlerAttached = false;
@@ -77,10 +92,12 @@ function attachCommitMessageChangedByUserEventHandler() {
 function onMergeStrategyChange(handler) {
     let currentMergeStrategy;
     setInterval(() => {
-        const mergeStrategy = getMergeStrategy();
-        if (mergeStrategy !== currentMergeStrategy) {
-            currentMergeStrategy = mergeStrategy;
-            handler(currentMergeStrategy);
+        if (state.mergeDialogOpen) {
+            const mergeStrategy = getMergeStrategy();
+            if (mergeStrategy !== currentMergeStrategy) {
+                currentMergeStrategy = mergeStrategy;
+                handler(currentMergeStrategy);
+            }
         }
     }, 100);
 }
@@ -148,9 +165,9 @@ function updateMergeCommitMessage(mergeStrategy) {
         return;
     }
 
-    const oldCommitMessageTextAreaId = "id_commit_message";
-    const newCommitMessageTextAreaId = "merge-dialog-commit-message-textfield";
-    const commitMessageTextArea = document.querySelector(`#${oldCommitMessageTextAreaId},#${newCommitMessageTextAreaId}`);
+    log(`Updating merge commit message with strategy ${mergeStrategy}`);
+
+    const commitMessageTextArea = getMergeCommitMessageTextArea();
     const defaultCommitMessage = commitMessageTextArea.value;
     const newCommitMessage = buildBetterCommitMessage(mergeStrategy, defaultCommitMessage);
 
@@ -160,8 +177,61 @@ function updateMergeCommitMessage(mergeStrategy) {
 
     commitMessageTextArea.value = newCommitMessage;
 
+    // Commit message will be reverted unless we signal via DOM events that the
+    // textarea contents have changed
+    sendDOMEventsSignalingTextChange(commitMessageTextArea);
+
     // Move text cursor to beginning
     commitMessageTextArea.setSelectionRange(0, 0);
+}
+
+function getMergeCommitMessageTextArea() {
+    const oldCommitMessageTextAreaId = "id_commit_message";
+    const newCommitMessageTextAreaId = "merge-dialog-commit-message-textfield";
+    return document.querySelector(`#${oldCommitMessageTextAreaId},#${newCommitMessageTextAreaId}`);
+}
+
+function sendDOMEventsSignalingTextChange(commitMessageTextArea) {
+    dispatchKeyPressEvent(commitMessageTextArea, " ", "Space", 32);
+
+    disableCommitMessageChangeTrackingWhile(() => {
+        const inputEvent = new InputEvent("input", {
+            bubbles: true,
+            cancelable: true
+        });
+        const changeEvent = new UIEvent("change", {
+            bubbles: true,
+            cancelable: true
+        });
+        commitMessageTextArea.dispatchEvent(inputEvent);
+        commitMessageTextArea.dispatchEvent(changeEvent);
+    });
+}
+
+function disableCommitMessageChangeTrackingWhile(callback) {
+    state.disableCommitMessageChangeTracking = true;
+    callback();
+    state.disableCommitMessageChangeTracking = false;
+}
+
+function dispatchKeyPressEvent(element, key, code, keyCode) {
+    log(`Dispatching ${code}`);
+    dispatchKeyboardEvent(element, "keydown", key, code, keyCode);
+    dispatchKeyboardEvent(element, "keypress", key, code, keyCode);
+    dispatchKeyboardEvent(element, "keyup", key, code, keyCode);
+}
+
+function dispatchKeyboardEvent(element, eventName, key, code, keyCode) {
+    const keyboardEvent = new KeyboardEvent(eventName, {
+        key,
+        keyCode,
+        code,
+        charCode: keyCode,
+        which: keyCode,
+        bubbles: true,
+        cancelable: true
+    });
+    element.dispatchEvent(keyboardEvent);
 }
 
 function buildBetterCommitMessage(mergeStrategy, defaultCommitMessage) {
@@ -198,11 +268,6 @@ function buildBetterDefaultCommitMessage(defaultCommitMessage) {
     const pullRequestNumber = getPullRequestNumber();
     const pullRequestTitle = getPullRequestTitle();
     let betterMessage = `Merge: ${pullRequestTitle} (PR #${pullRequestNumber})`;
-
-    const indivualCommitMessages = getIndividualCommitMessagesFromDefaultCommitMessage(defaultCommitMessage);
-    if (indivualCommitMessages) {
-        betterMessage += `\n\n${indivualCommitMessages}`;
-    }
 
     const approvals = getApprovalsFromDefaultCommitMessage(defaultCommitMessage);
     if (approvals) {
