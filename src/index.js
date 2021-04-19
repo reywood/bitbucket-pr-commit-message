@@ -22,29 +22,30 @@ init();
 
 async function init() {
     try {
-        await attachMergeDialogOpenEventHandler();
+        const mergeButton = await findMergeButton({ maxSecondsToWait: 10 });
+        await attachMergeDialogOpenEventHandler(mergeButton);
         attachMergeDialogCloseEventHandler();
         attachMergeStrategyChangeEventHandler();
         attachCommitMessageChangedByUserEventHandler();
+        watchForMergeButtonDomReplacement(mergeButton);
     } catch (error) {
         console.error(`Unable to initialize BitBucket PR Commit Message extension: ${error}`);
     }
 }
 
-async function attachMergeDialogOpenEventHandler() {
+async function attachMergeDialogOpenEventHandler(mergeButton) {
     const onMergeDialogOpen = () => {
         state.reset();
         updateMergeCommitMessage(getMergeStrategy());
         state.mergeDialogOpen = true;
     };
 
-    const mergeButton = await findMergeButton({ maxSecondsToWait: 10 });
     mergeButton.addEventListener("click", async () => {
         try {
             await waitForMergeDialog({ maxSecondsToWait: 10 });
             onMergeDialogOpen();
         } catch (error) {
-            console.error(`Unabled to update commit message: ${error}`);
+            console.error(`Unable to update commit message: ${error}`);
         }
     });
 }
@@ -87,6 +88,18 @@ function attachCommitMessageChangedByUserEventHandler() {
             isEventHandlerAttached = false;
         }
     }, 100);
+}
+
+async function watchForMergeButtonDomReplacement(mergeButton) {
+    let currentMergeButton = mergeButton;
+    setInterval(async () => {
+        const mergeButton = await findMergeButton({ maxSecondsToWait: 10 });
+        if (currentMergeButton !== mergeButton) {
+            log("Merge button has been replaced in the DOM");
+            currentMergeButton = mergeButton;
+            attachMergeDialogOpenEventHandler(mergeButton);
+        }
+    }, 1000);
 }
 
 function onMergeStrategyChange(handler) {
