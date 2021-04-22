@@ -264,7 +264,12 @@ function buildBetterSquashCommitMessage(defaultCommitMessage) {
     const pullRequestTitle = getPullRequestTitle();
     let betterMessage = `${pullRequestTitle} (PR #${pullRequestNumber})`;
 
-    const indivualCommitMessages = getIndividualCommitMessagesFromDefaultCommitMessage(defaultCommitMessage);
+    const pullRequestDescription = getPullRequestDescription();
+    if (pullRequestDescription) {
+        betterMessage += `\n\n${pullRequestDescription}`;
+    }
+
+    const indivualCommitMessages = getIndividualCommitMessagesFromDefaultCommitMessage(defaultCommitMessage, pullRequestTitle);
     if (indivualCommitMessages) {
         betterMessage += `\n\n${indivualCommitMessages}`;
     }
@@ -281,6 +286,11 @@ function buildBetterDefaultCommitMessage(defaultCommitMessage) {
     const pullRequestNumber = getPullRequestNumber();
     const pullRequestTitle = getPullRequestTitle();
     let betterMessage = `Merge: ${pullRequestTitle} (PR #${pullRequestNumber})`;
+
+    const pullRequestDescription = getPullRequestDescription();
+    if (pullRequestDescription) {
+        betterMessage += `\n\n${pullRequestDescription}`;
+    }
 
     const approvals = getApprovalsFromDefaultCommitMessage(defaultCommitMessage);
     if (approvals) {
@@ -315,6 +325,10 @@ function getPullRequestTitle() {
     return document.querySelector("header h1").textContent.trim();
 }
 
+function getPullRequestDescription() {
+    return document.querySelector("#pull-request-description-panel p").textContent.trim();
+}
+
 function getMergeStrategy() {
     const getMergeStrategyInOldPRInterface = () => {
         const chosenStrategyElement = document.querySelector("#id_merge_strategy_group .select2-chosen");
@@ -331,10 +345,11 @@ function getMergeStrategy() {
     return getMergeStrategyInOldPRInterface() || getMergeStrategyInNewPRInterface();
 }
 
-function getIndividualCommitMessagesFromDefaultCommitMessage(defaultCommitMessage) {
+function getIndividualCommitMessagesFromDefaultCommitMessage(defaultCommitMessage, pullRequestTitle) {
     const lines = getDefaultCommitMessageLines(defaultCommitMessage);
-    const commitLines = lines.filter(line => line.startsWith("* "));
-    return commitLines.join("\n");
+    return lines
+        .filter(line => line.startsWith("* ") && line.substr(2).trim() !== pullRequestTitle)
+        .join("\n");
 }
 
 function getApprovalsFromDefaultCommitMessage(defaultCommitMessage) {
@@ -344,5 +359,5 @@ function getApprovalsFromDefaultCommitMessage(defaultCommitMessage) {
 }
 
 function getDefaultCommitMessageLines(defaultCommitMessage) {
-    return defaultCommitMessage.replace(/[\r\n]+/g, "\n").split("\n");
+    return defaultCommitMessage.replace(/[\r\n]+/g, "\n").split("\n").map(line => line.trim());
 }
