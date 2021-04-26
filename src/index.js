@@ -201,7 +201,11 @@ function updateMergeCommitMessage(mergeStrategy) {
 function getMergeCommitMessageTextArea() {
     const oldCommitMessageTextAreaId = "id_commit_message";
     const newCommitMessageTextAreaId = "merge-dialog-commit-message-textfield";
-    return document.querySelector(`#${oldCommitMessageTextAreaId},#${newCommitMessageTextAreaId}`);
+    const textarea = document.querySelector(`#${oldCommitMessageTextAreaId},#${newCommitMessageTextAreaId}`);
+    if (!textarea) {
+        throw new Error("Unable to find merge commit message text area");
+    }
+    return textarea;
 }
 
 function sendDOMEventsSignalingTextChange(commitMessageTextArea) {
@@ -322,11 +326,19 @@ function getPullRequestNumber() {
 }
 
 function getPullRequestTitle() {
-    return document.querySelector("header h1").textContent.trim();
+    const titleElement = document.querySelector("header h1");
+    if (!titleElement) {
+        throw new Error("Unable to find title element");
+    }
+    return titleElement.textContent.trim();
 }
 
 function getPullRequestDescription() {
-    return document.querySelector("#pull-request-description-panel p").textContent.trim();
+    const descriptionElement = document.querySelector("#pull-request-description-panel p");
+    if (!descriptionElement) {
+        return null;
+    }
+    return descriptionElement.textContent.trim();
 }
 
 function getMergeStrategy() {
