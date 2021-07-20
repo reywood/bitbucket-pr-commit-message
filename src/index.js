@@ -306,9 +306,12 @@ function buildBetterDefaultCommitMessage(defaultCommitMessage) {
 
 function isMergeDialogShowing() {
     try {
-        const oldSelector = "#bb-fulfill-pullrequest-dialog h2";
-        const newSelector = "div[role='dialog'] header h4";
-        const possibleDialogHeaders = document.querySelectorAll(`${oldSelector},${newSelector}`);
+        const possibleSelectors = [
+            "#bb-fulfill-pullrequest-dialog h2",
+            "[role='dialog'] header h4",
+            "[role='dialog'] h1"
+        ];
+        const possibleDialogHeaders = document.querySelectorAll(possibleSelectors.join(","));
         return [...possibleDialogHeaders].some(header => header.textContent.trim() === "Merge pull request");
     } catch (error) {
         console.error(`Error while checking to see if merge dialog is showing: ${error}`);
