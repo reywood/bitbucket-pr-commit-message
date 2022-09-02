@@ -266,7 +266,7 @@ function buildBetterCommitMessage(mergeStrategy, defaultCommitMessage) {
 function buildBetterSquashCommitMessage(defaultCommitMessage) {
     const pullRequestNumber = getPullRequestNumber();
     const pullRequestTitle = getPullRequestTitle();
-    let betterMessage = `${pullRequestTitle} (PR #${pullRequestNumber})`;
+    let betterMessage = `${pullRequestTitle} (pull request #${pullRequestNumber})`;
 
     const pullRequestDescription = getPullRequestDescription();
     if (pullRequestDescription) {
@@ -289,7 +289,7 @@ function buildBetterSquashCommitMessage(defaultCommitMessage) {
 function buildBetterDefaultCommitMessage(defaultCommitMessage) {
     const pullRequestNumber = getPullRequestNumber();
     const pullRequestTitle = getPullRequestTitle();
-    let betterMessage = `Merge: ${pullRequestTitle} (PR #${pullRequestNumber})`;
+    let betterMessage = `Merge: ${pullRequestTitle} (pull request #${pullRequestNumber})`;
 
     const pullRequestDescription = getPullRequestDescription();
     if (pullRequestDescription) {
