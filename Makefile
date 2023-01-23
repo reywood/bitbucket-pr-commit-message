@@ -5,7 +5,6 @@ DATE := $(shell date '+%Y%m%d-%H%M%S')
 BUNDLE_FILE_NAME := bitbucket-pr-commit-msg-$(VERSION).zip
 BUNDLE_FILE_PATH := $(BUILD_DIR)/$(BUNDLE_FILE_NAME)
 BIN_DIR := node_modules/.bin
-ESLINT := $(BIN_DIR)/eslint
 
 .PHONY: bundle clean lint test
 
@@ -14,8 +13,8 @@ bundle: lint $(BUNDLE_FILE_PATH)
 clean:
 	rm -rf $(BUILD_DIR)
 
-lint: $(ESLINT)
-	$(ESLINT) src/
+lint: $(BIN_DIR)
+	npm run lint
 
 test: lint
 	# open $(ROOT_DIR)/tests/index.html
@@ -25,5 +24,5 @@ $(BUNDLE_FILE_PATH):
 	zip -Z deflate -r $(BUNDLE_FILE_PATH) manifest.json src/*.js
 	@echo Created bundle $(BUNDLE_FILE_PATH)
 
-$(ESLINT):
+$(BIN_DIR):
 	npm install
