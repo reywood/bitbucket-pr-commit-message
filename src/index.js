@@ -337,11 +337,9 @@ function getPullRequestTitle() {
 }
 
 function getPullRequestDescription() {
-    const descriptionElement = document.querySelector("#pull-request-description-panel p");
-    if (!descriptionElement) {
-        return null;
-    }
-    return descriptionElement.textContent.trim();
+    return [...document.querySelectorAll("#pull-request-description-panel p")]
+        .map(descriptionParagraph => descriptionParagraph.textContent.trim())
+        .join("\n\n");
 }
 
 function getMergeStrategy() {
